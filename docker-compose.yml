@@ -1,0 +1,61 @@
+# =============================================================================
+# docker-compose.yml
+#
+# Runs the full stack locally:
+#   • fastapi  — Backend API (port 8000)
+#   • streamlit — Frontend UI (port 8501)
+#
+# Both services share the same .env file.
+# =============================================================================
+
+version: "3.9"
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # FastAPI Backend
+  # ---------------------------------------------------------------------------
+  fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: ofa-ai-assist-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - APP_ENV=development
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import httpx; httpx.get('http://localhost:8000/api/v1/health').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Streamlit Frontend
+  # ---------------------------------------------------------------------------
+  streamlit:
+    build:
+      context: .
+      dockerfile: Dockerfile.streamlit
+    container_name: ofa-ai-assist-ui
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      - STREAMLIT_BACKEND_URL=http://fastapi:8000  # Container-to-container networking
+    depends_on:
+      fastapi:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  logs:

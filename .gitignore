@@ -1,0 +1,56 @@
+# =============================================================================
+# OFA - AI Assist
+# Git Ignore
+# =============================================================================
+
+# Environment
+.env
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/*.log
+logs/*.jsonl
+
+# Data (raw documents — never commit HR docs to git)
+data/raw/
+data/processed/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.xml
+
+# Docker
+*.dockerignore
+
+# OS
+.DS_Store
+Thumbs.db
+
+
+#Knowledge Base
+Knowledge Base/
