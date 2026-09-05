@@ -91,7 +91,7 @@ def _build_index_definition() -> SearchIndex:
         SimpleField(name=FIELD_PAGE_NUMBER, type=SearchFieldDataType.Int32, filterable=True),
         SimpleField(name=FIELD_URL, type=SearchFieldDataType.String),
         SimpleField(name=FIELD_LAST_MODIFIED, type=SearchFieldDataType.DateTimeOffset, filterable=True),
-        SimpleField(name=FIELD_CONTENT_HASH, type=SearchFieldDataType.String),
+        SimpleField(name=FIELD_CONTENT_HASH, type=SearchFieldDataType.String, filterable=True),
         SimpleField(name=FIELD_CHUNK_INDEX, type=SearchFieldDataType.Int32),
         SimpleField(name=FIELD_TOTAL_CHUNKS, type=SearchFieldDataType.Int32),
     ]
@@ -273,15 +273,20 @@ class SearchService:
         Check if a chunk with the given content hash already exists in the
         index.  Used by the incremental ingestion pipeline to skip unchanged
         documents.
+
+        Filters only on `filename` (always filterable) and compares
+        `content_hash` client-side, so this also works against older indexes
+        where `content_hash` was created without `filterable=True`.
         """
+        escaped_filename = filename.replace("'", "''")
         results = await self._search_client.search(
             search_text="*",
-            filter=f"{FIELD_CONTENT_HASH} eq '{content_hash}' and {FIELD_FILENAME} eq '{filename}'",
-            select=[FIELD_ID],
-            top=1,
+            filter=f"{FIELD_FILENAME} eq '{escaped_filename}'",
+            select=[FIELD_ID, FIELD_CONTENT_HASH],
         )
-        async for _ in results:
-            return True
+        async for result in results:
+            if result.get(FIELD_CONTENT_HASH) == content_hash:
+                return True
         return False
 
     async def delete_documents_by_filename(self, filename: str) -> int:
